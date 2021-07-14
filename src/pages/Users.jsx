@@ -1,7 +1,7 @@
 import React, { Component, useEffect, useState } from "react";
 import MUIDataTable from "mui-datatables";
-import Grid from "@material-ui/core/Grid";
-import axios from "axios";
+import httpService from "../services/httpService";
+import { Button } from "@material-ui/core";
 
 const Users = () => {
   const columns = [
@@ -47,13 +47,19 @@ const Users = () => {
         sort: true,
       },
     },
+    {
+      name: "action",
+      label: "Action",
+    },
   ];
 
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
     async function getUsers() {
-      const result = await axios("https://jsonplaceholder.typicode.com/users");
+      const result = await httpService.get(
+        "https://jsonplaceholder.typicode.com/users"
+      );
       setUsers(
         result.data.map(({ id, name, email, phone, address, company }) => {
           return {
@@ -63,6 +69,11 @@ const Users = () => {
             phone,
             addressName: address.street,
             companyName: company.name,
+            action: (
+              <Button variant="contained" color="secondary">
+                View
+              </Button>
+            ),
           };
         })
       );
@@ -86,12 +97,14 @@ const Users = () => {
   };
 
   return (
-    <MUIDataTable
-      title={"Employee List"}
-      data={users}
-      columns={columns}
-      options={options}
-    />
+    <div style={{ marginBottom: "20px" }}>
+      <MUIDataTable
+        title={"Employee List"}
+        data={users}
+        columns={columns}
+        options={options}
+      />
+    </div>
   );
 };
 
