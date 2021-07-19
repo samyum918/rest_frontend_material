@@ -1,7 +1,8 @@
-import React, { Component, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MUIDataTable from "mui-datatables";
-import httpService from "../services/httpService";
 import { Button } from "@material-ui/core";
+import JsonQueryUtils from "../utils/JsonQueryUtils";
+import { page } from "../services/userService";
 
 const Users = () => {
   const columns = [
@@ -20,13 +21,6 @@ const Users = () => {
       },
     },
     {
-      name: "email",
-      label: "Email",
-      options: {
-        sort: true,
-      },
-    },
-    {
       name: "phone",
       label: "Phone",
       options: {
@@ -34,15 +28,15 @@ const Users = () => {
       },
     },
     {
-      name: "addressName",
-      label: "Address",
+      name: "address1",
+      label: "Address1",
       options: {
         sort: true,
       },
     },
     {
-      name: "companyName",
-      label: "Company Name",
+      name: "address2",
+      label: "Address2",
       options: {
         sort: true,
       },
@@ -53,36 +47,11 @@ const Users = () => {
     },
   ];
 
-  const [users, setUsers] = useState([]);
+  let criterias = [];
+  let pageRequest = JsonQueryUtils.pageRequest(0, 5);
+  let sort = [];
 
-  useEffect(() => {
-    async function getUsers() {
-      const result = await httpService.get(
-        "https://jsonplaceholder.typicode.com/users"
-      );
-      setUsers(
-        result.data.map(({ id, name, email, phone, address, company }) => {
-          return {
-            id,
-            name,
-            email,
-            phone,
-            addressName: address.street,
-            companyName: company.name,
-            action: (
-              <Button variant="contained" color="secondary">
-                View
-              </Button>
-            ),
-          };
-        })
-      );
-    }
-
-    getUsers();
-  }, []);
-
-  const options = {
+  const initOptions = {
     draggableColumns: {
       enabled: true,
     },
@@ -92,9 +61,74 @@ const Users = () => {
     print: false,
     viewColumns: false,
     selectableRowsHideCheckboxes: true,
-    rowsPerPage: 5,
+    serverSide: true,
+    page: pageRequest.page,
+    rowsPerPage: pageRequest.size,
     rowsPerPageOptions: [5, 10, 25, 50],
+    onChangePage: (currentPage) => {
+      pageRequest.page = currentPage;
+      getUsers();
+    },
+    onChangeRowsPerPage: (numberOfRows) => {
+      pageRequest.size = numberOfRows;
+      getUsers();
+    },
+    onColumnSortChange: (changedColumn, direction) => {
+      if (direction === "asc") {
+        sort = [{ ...JsonQueryUtils.sortAsc(changedColumn, true) }];
+        getUsers();
+      } else if (direction === "desc") {
+        sort = [{ ...JsonQueryUtils.sortDesc(changedColumn, true) }];
+        getUsers();
+      }
+    },
   };
+  const [options, setOptions] = useState(initOptions);
+
+  const [users, setUsers] = useState([]);
+  useEffect(() => {
+    getUsers();
+  }, []);
+
+  async function getUsers() {
+    const body = JsonQueryUtils.generateQueryObjectJson(
+      criterias,
+      pageRequest,
+      sort
+    );
+    const result = await page(body);
+
+    let updatedOptions = { ...options };
+    updatedOptions.page = pageRequest.page;
+    updatedOptions.rowsPerPage = pageRequest.size;
+    updatedOptions.count = result.data.pageInfo.totalElements;
+    setOptions(updatedOptions);
+    setUsers(
+      result.data.contents.map(({ id, name, phone, address1, address2 }) => {
+        return {
+          id,
+          name,
+          phone,
+          address1,
+          address2,
+          action: (
+            <>
+              <Button
+                variant="contained"
+                color="secondary"
+                style={{ marginRight: "10px" }}
+              >
+                View
+              </Button>
+              <Button variant="contained" color="secondary">
+                Edit
+              </Button>
+            </>
+          ),
+        };
+      })
+    );
+  }
 
   return (
     <div style={{ marginBottom: "20px" }}>
