@@ -1,9 +1,12 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import TextField from "@material-ui/core/TextField";
 import { Typography } from "@material-ui/core";
 import Paper from "@material-ui/core/Paper";
 import Grid from "@material-ui/core/Grid";
 import { makeStyles } from "@material-ui/core/styles";
+import { MuiPickersUtilsProvider } from "@material-ui/pickers";
+import DateFnsUtils from "@date-io/date-fns";
+import { DatePicker, KeyboardDatePicker } from "@material-ui/pickers";
 
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -12,6 +15,11 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const TestForm = (props) => {
+  const [selectedDate, setSelectedDate] = React.useState(null);
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+  };
   const classes = useStyles();
 
   return (
@@ -32,6 +40,21 @@ const TestForm = (props) => {
       <Grid container spacing={5}>
         <Grid item xs={6}>
           <TextField id="standard-basic3" label="Standard3" fullWidth />
+        </Grid>
+        <Grid item xs={6}>
+          <MuiPickersUtilsProvider utils={DateFnsUtils}>
+            <KeyboardDatePicker
+              disableToolbar
+              variant="inline"
+              format="yyyy/MM/dd"
+              margin="none"
+              id="date-picker"
+              label="Date picker"
+              value={selectedDate}
+              onChange={handleDateChange}
+              fullWidth
+            />
+          </MuiPickersUtilsProvider>
         </Grid>
       </Grid>
       <Grid container spacing={5}>
